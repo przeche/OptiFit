@@ -1,6 +1,6 @@
-const CACHE_NAME = 'optifit-v1';
+const CACHE_NAME = 'optifit-v2'; // Zmiana wersji, aby wymusić aktualizację w telefonie
 const ASSETS = [
-  './eye_workout_dashboard.html',
+  './index.html', // Poprawiono z eye_workout_dashboard.html na index.html
   './manifest.json',
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/lucide@latest'

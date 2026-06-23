@@ -1,7 +1,7 @@
 const CACHE_NAME = 'optifit-v3'; // Zwiększamy wersję, aby wymusić natychmiastowe czyszczenie starego cache w telefonie
 const ASSETS = [
-  './index.html',
-  './manifest.json',
+  './optifit/index.html',
+  './optifit/manifest.json',
   'https://cdn.tailwindcss.com',
   'https://unpkg.com/lucide@latest'
 ];

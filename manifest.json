@@ -1,0 +1,24 @@
+{
+"name": "OptiFit - Codzienny Trener Oczu",
+"short_name": "OptiFit",
+"description": "Zestaw 10-minutowych interaktywnych ćwiczeń poprawiających elastyczność mięśni oka i skracających czas akomodacji.",
+"start_url": "./eye_workout_dashboard.html",
+"display": "standalone",
+"background_color": "#0f172a",
+"theme_color": "#0f172a",
+"orientation": "portrait",
+"icons": [
+{
+"src": "icon-192.png",
+"sizes": "192x192",
+"type": "image/png",
+"purpose": "any maskable"
+},
+{
+"src": "icon-512.png",
+"sizes": "512x512",
+"type": "image/png",
+"purpose": "any maskable"
+}
+]
+}

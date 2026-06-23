@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OptiFit - Twój Codzienny Trener Oczu</title>
+    <!-- Meta tagi dla Progressive Web App (PWA) -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        
+        /* Animacje dla ruchu po ósemce (lewo i prawo) */
+        @keyframes follow-path-left {
+            0% { offset-distance: 0%; }
+            100% { offset-distance: 100%; }
+        }
+        @keyframes follow-path-right {
+            0% { offset-distance: 100%; }
+            100% { offset-distance: 0%; }
+        }
+        
+        .tracker-dot-left {
+            offset-path: path('M 50,50 C 15,10 15,90 50,50 C 85,10 85,90 50,50 Z');
+            animation: follow-path-left 8s linear infinite;
+        }
+        
+        .tracker-dot-right {
+            offset-path: path('M 50,50 C 15,10 15,90 50,50 C 85,10 85,90 50,50 Z');
+            animation: follow-path-right 8s linear infinite;
+        }
+
+        /* Animacja przybliżania i oddalania (Focus bez okularów) */
+        @keyframes phone-zoom {
+            0%, 100% { transform: scale(0.65); filter: blur(2px); }
+            50% { transform: scale(1.3); filter: blur(0px); }
+        }
+        .phone-zoom-anim {
+            animation: phone-zoom 6s ease-in-out infinite;
+        }
+
+        /* Pulsowanie dla Palmingu */
+        @keyframes soft-pulse {
+            0%, 100% { transform: scale(1); opacity: 0.4; }
+            50% { transform: scale(1.15); opacity: 0.8; }
+        }
+        .pulse-circle {
+            animation: soft-pulse 5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between">
+
+    <!-- HEADER -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-emerald-500/10 rounded-xl text-emerald-400">
+                    <i data-lucide="eye" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight">OptiFit</h1>
+                    <p class="text-xs text-slate-400">Codzienna elastyczność oka</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="rulesBtn" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition flex items-center gap-1.5 text-slate-300">
+                    <i data-lucide="info" class="w-3.5 h-3.5 text-emerald-400"></i>
+                    Reguła 20-20-20
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-grow max-w-5xl w-full mx-auto px-4 py-6">
+        
+        <!-- DASHBOARD VIEW -->
+        <div id="dashboardView" class="space-y-6">
+            <!-- Powitanie i Szybki Start -->
+            <div class="bg-gradient-to-br from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-500/20 rounded-2xl p-6 md:p-8 relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl"></div>
+                <div class="relative z-10 max-w-xl">
+                    <span class="text-emerald-400 text-xs font-semibold uppercase tracking-wider bg-emerald-500/10 px-2.5 py-1 rounded-full">Zoptymalizowany plan treningowy</span>
+                    <h2 class="text-2xl md:text-3xl font-extrabold mt-3 mb-2">Czas na gimnastykę oczu!</h2>
+                    <p class="text-slate-300 text-sm md:text-base mb-6 leading-relaxed">
+                        Udoskonalony, 10-minutowy zestaw ćwiczeń. Podział na kierunki ruchu gałek ocznych oraz intensywny trening akomodacji bez okularów pomoże odzyskać elastyczność Twoim oczom.
+                    </p>
+                    <button onclick="startFullWorkout()" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold px-6 py-3.5 rounded-xl shadow-lg shadow-emerald-500/20 transition flex items-center gap-2 text-sm md:text-base w-full sm:w-auto justify-center">
+                        <i data-lucide="play-circle" class="w-5 h-5 fill-current"></i>
+                        Rozpocznij Trening (10 min)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lista ćwiczeń -->
+            <div>
+                <h3 class="text-lg font-bold mb-4 flex items-center gap-2">
+                    <i data-lucide="activity" class="w-5 h-5 text-emerald-400"></i>
+                    Twój Plan Treningowy (6 Kroków)
+                </h3>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Ćwiczenie 1 -->
+                    <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="bg-emerald-500/10 text-emerald-400 text-xs font-semibold px-2.5 py-1 rounded-md">Krok 1</span>
+                                <span class="text-slate-400 text-xs flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> 3:00 min</span>
+                            </div>
+                            <h4 class="font-bold text-base text-slate-100 mb-1.5">Płynny Autofokus</h4>
+                            <p class="text-slate-400 text-xs leading-relaxed">Przenoszenie wzroku z bliskiego kciuka na oddalony obiekt za oknem.</p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
+                            <span class="text-xs text-emerald-400/80 font-medium flex items-center gap-1">
+                                <i data-lucide="refresh-cw" class="w-3 h-3"></i> Trening akomodacji
+                            </span>
+                            <button onclick="startSingleExercise(0)" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition text-emerald-400 font-semibold">Uruchom</button>
+                        </div>
+                    </div>
+
+                    <!-- Ćwiczenie 2 -->
+                    <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="bg-emerald-500/10 text-emerald-400 text-xs font-semibold px-2.5 py-1 rounded-md">Krok 2</span>
+                                <span class="text-slate-400 text-xs flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> 2:00 min</span>
+                            </div>
+                            <h4 class="font-bold text-base text-slate-100 mb-1.5">Skakanie Wzrokiem</h4>
+                            <p class="text-slate-400 text-xs leading-relaxed">Praca na trzech odmiennych dystansach (telefon, ściana, horyzont).</p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
+                            <span class="text-xs text-emerald-400/80 font-medium flex items-center gap-1">
+                                <i data-lucide="zap" class="w-3 h-3"></i> Dynamika ostrości
+                            </span>
+                            <button onclick="startSingleExercise(1)" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition text-emerald-400 font-semibold">Uruchom</button>
+                        </div>
+                    </div>
+
+                    <!-- Ćwiczenie 3 -->
+                    <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="bg-emerald-500/10 text-emerald-400 text-xs font-semibold px-2.5 py-1 rounded-md">Krok 3</span>
+                                <span class="text-slate-400 text-xs flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> 1:00 min</span>
+                            </div>
+                            <h4 class="font-bold text-base text-slate-100 mb-1.5">Ósemki w lewo</h4>
+                            <p class="text-slate-400 text-xs leading-relaxed">Śledzenie ruchu po znaku nieskończoności w kierunku przeciwnym do wskazówek zegara.</p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
+                            <span class="text-xs text-emerald-400/80 font-medium flex items-center gap-1">
+                                <i data-lucide="arrow-left-circle" class="w-3 h-3"></i> Ruch w lewo
+                            </span>
+                            <button onclick="startSingleExercise(2)" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition text-emerald-400 font-semibold">Uruchom</button>
+                        </div>
+                    </div>
+
+                    <!-- Ćwiczenie 4 -->
+                    <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="bg-emerald-500/10 text-emerald-400 text-xs font-semibold px-2.5 py-1 rounded-md">Krok 4</span>
+                                <span class="text-slate-400 text-xs flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> 1:00 min</span>
+                            </div>
+                            <h4 class="font-bold text-base text-slate-100 mb-1.5">Ósemki w prawo</h4>
+                            <p class="text-slate-400 text-xs leading-relaxed">Płynne śledzenie kształtu w prawo dla zrównoważenia napięcia wszystkich mięśni.</p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
+                            <span class="text-xs text-emerald-400/80 font-medium flex items-center gap-1">
+                                <i data-lucide="arrow-right-circle" class="w-3 h-3"></i> Ruch w prawo
+                            </span>
+                            <button onclick="startSingleExercise(3)" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition text-emerald-400 font-semibold">Uruchom</button>
+                        </div>
+                    </div>
+
+                    <!-- Ćwiczenie 5 -->
+                    <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="bg-amber-500/10 text-amber-400 text-xs font-semibold px-2.5 py-1 rounded-md">NOWOŚĆ</span>
+                                <span class="text-slate-400 text-xs flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> 2:00 min</span>
+                            </div>
+                            <h4 class="font-bold text-base text-slate-100 mb-1.5">Focus Bez Okularów</h4>
+                            <p class="text-slate-400 text-xs leading-relaxed">Zdejmij okulary/soczewki. Przybliżaj i oddalaj telefon, zmuszając oczy do naturalnej akomodacji.</p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
+                            <span class="text-xs text-amber-400/80 font-medium flex items-center gap-1">
+                                <i data-lucide="eye-off" class="w-3 h-3"></i> Naturalny trening
+                            </span>
+                            <button onclick="startSingleExercise(4)" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition text-amber-400 font-semibold">Uruchom</button>
+                        </div>
+                    </div>
+
+                    <!-- Ćwiczenie 6 -->
+                    <div class="bg-slate-800/50 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition flex flex-col justify-between">
+                        <div>
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="bg-emerald-500/10 text-emerald-400 text-xs font-semibold px-2.5 py-1 rounded-md">Krok 6</span>
+                                <span class="text-slate-400 text-xs flex items-center gap-1"><i data-lucide="clock" class="w-3.5 h-3.5"></i> 1:00 min</span>
+                            </div>
+                            <h4 class="font-bold text-base text-slate-100 mb-1.5">Szybki Palming</h4>
+                            <p class="text-slate-400 text-xs leading-relaxed">Końcowy, skrócony relaks. Odcięcie światła i rozgrzanie oczu dłońmi dla pełnego resetu.</p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-800 flex justify-between items-center">
+                            <span class="text-xs text-emerald-400/80 font-medium flex items-center gap-1">
+                                <i data-lucide="sun-off" class="w-3 h-3"></i> Szybka regeneracja
+                            </span>
+                            <button onclick="startSingleExercise(5)" class="text-xs bg-slate-800 hover:bg-slate-700 px-3 py-1.5 rounded-lg transition text-emerald-400 font-semibold">Uruchom</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACTIVE WORKOUT VIEW -->
+        <div id="workoutView" class="hidden space-y-6">
+            <div class="bg-slate-800/80 border border-slate-700/50 rounded-2xl p-6 md:p-8 flex flex-col items-center text-center">
+                <!-- Status/Kroki -->
+                <div class="flex items-center gap-2 mb-4">
+                    <span id="workoutStepIndicator" class="text-xs font-semibold text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full uppercase tracking-wider">Krok 1 z 6</span>
+                </div>
+
+                <!-- Tytuł Ćwiczenia -->
+                <h3 id="workoutTitle" class="text-xl md:text-2xl font-bold mb-2">Płynny Autofokus</h3>
+                <p id="workoutDesc" class="text-slate-400 text-sm max-w-lg mb-6">Trzymaj kciuk przed sobą. Na zmianę skupiaj wzrok na kciuku i na obiekcie w dali za oknem.</p>
+
+                <!-- INTERAKTYWNA WIZUALIZACJA -->
+                <div class="w-full max-w-md aspect-video bg-slate-950/80 rounded-xl border border-slate-800 flex flex-col items-center justify-center relative overflow-hidden mb-6 p-4">
+                    
+                    <!-- Wizualizacja 1: Autofokus -->
+                    <div id="visual-0" class="visual-container w-full h-full flex flex-col items-center justify-center space-y-4">
+                        <div class="flex justify-around w-full items-center">
+                            <div id="autofocus-thumb" class="flex flex-col items-center transition-all duration-500 transform scale-110">
+                                <span class="text-4xl">👍</span>
+                                <span class="text-xs text-slate-400 font-semibold mt-2">BLISKO (Kciuk)</span>
+                            </div>
+                            <div class="flex-grow h-1 bg-gradient-to-r from-emerald-500 to-slate-700 mx-4 rounded relative">
+                                <div id="autofocus-laser" class="absolute top-0 bottom-0 left-0 w-4 bg-emerald-400 rounded transition-all duration-1000"></div>
+                            </div>
+                            <div id="autofocus-distant" class="flex flex-col items-center transition-all duration-500 transform opacity-40">
+                                <span class="text-4xl">🌳</span>
+                                <span class="text-xs text-slate-400 font-semibold mt-2">DAL (Za oknem)</span>
+                            </div>
+                        </div>
+                        <div class="text-sm font-bold text-emerald-400" id="autofocus-instruction">SKUP WZROK BLISKO</div>
+                    </div>
+
+                    <!-- Wizualizacja 2: Skakanie wzrokiem -->
+                    <div id="visual-1" class="visual-container hidden w-full h-full flex flex-col items-center justify-center space-y-6">
+                        <div class="flex justify-between items-center w-full px-6">
+                            <div id="jump-1" class="flex flex-col items-center transition-all duration-300 p-3 rounded-lg border border-transparent">
+                                <span class="text-3xl">📱</span>
+                                <span class="text-xs font-bold text-slate-400 mt-1">1. Telefon</span>
+                            </div>
+                            <div id="jump-2" class="flex flex-col items-center transition-all duration-300 p-3 rounded-lg border border-transparent">
+                                <span class="text-3xl">🪟</span>
+                                <span class="text-xs font-bold text-slate-400 mt-1">2. Ściana</span>
+                            </div>
+                            <div id="jump-3" class="flex flex-col items-center transition-all duration-300 p-3 rounded-lg border border-transparent">
+                                <span class="text-3xl">☁️</span>
+                                <span class="text-xs font-bold text-slate-400 mt-1">3. Chmury</span>
+                            </div>
+                        </div>
+                        <div class="text-sm font-bold text-emerald-400" id="jump-instruction">PATRZ NA TELEFON (BLISKO)</div>
+                    </div>
+
+                    <!-- Wizualizacja 3: Ósemki w lewo -->
+                    <div id="visual-2" class="visual-container hidden w-full h-full flex flex-col items-center justify-center">
+                        <svg class="w-64 h-32 text-slate-800" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="4">
+                            <path d="M 50,50 C 15,10 15,90 50,50 C 85,10 85,90 50,50 Z" stroke-dasharray="2,2" />
+                            <circle class="tracker-dot-left" r="6" fill="#10b981" filter="drop-shadow(0 0 4px #10b981)" />
+                        </svg>
+                        <span class="text-xs text-slate-400 mt-2 text-center flex items-center gap-1.5">
+                            <i data-lucide="rotate-ccw" class="w-3.5 h-3.5 text-emerald-400"></i> Wódź oczami w lewo (przeciwnie do wskazówek zegara)
+                        </span>
+                    </div>
+
+                    <!-- Wizualizacja 4: Ósemki w prawo -->
+                    <div id="visual-3" class="visual-container hidden w-full h-full flex flex-col items-center justify-center">
+                        <svg class="w-64 h-32 text-slate-800" viewBox="0 0 100 100" fill="none" stroke="currentColor" stroke-width="4">
+                            <path d="M 50,50 C 15,10 15,90 50,50 C 85,10 85,90 50,50 Z" stroke-dasharray="2,2" />
+                            <circle class="tracker-dot-right" r="6" fill="#10b981" filter="drop-shadow(0 0 4px #10b981)" />
+                        </svg>
+                        <span class="text-xs text-slate-400 mt-2 text-center flex items-center gap-1.5">
+                            <i data-lucide="rotate-cw" class="w-3.5 h-3.5 text-emerald-400"></i> Wódź oczami w prawo (zgodnie ze wskazówkami zegara)
+                        </span>
+                    </div>
+
+                    <!-- Wizualizacja 5: Focus bez okularów -->
+                    <div id="visual-4" class="visual-container hidden w-full h-full flex flex-col items-center justify-center space-y-4">
+                        <div class="phone-zoom-anim flex flex-col items-center justify-center">
+                            <div class="relative p-4 bg-slate-800 rounded-3xl border-4 border-slate-700 shadow-2xl">
+                                <span class="text-5xl">📱</span>
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <span class="text-emerald-400 text-lg font-bold">🎯</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-sm font-bold text-amber-400 text-center" id="focus-instruction">PRZYBLIŻAJ I ODDALAJ TELEFON</div>
+                    </div>
+
+                    <!-- Wizualizacja 6: Szybki Palming -->
+                    <div id="visual-5" class="visual-container hidden w-full h-full flex flex-col items-center justify-center relative bg-slate-950">
+                        <div class="pulse-circle w-28 h-28 bg-emerald-500/10 border-2 border-emerald-500/40 rounded-full flex items-center justify-center">
+                            <span class="text-4xl">👐</span>
+                        </div>
+                        <p class="text-xs text-slate-400 mt-4 text-center px-4">Rozgrzane dłonie na zamknięte powieki. Odetnij światło i oddychaj spokojnie.</p>
+                    </div>
+
+                </div>
+
+                <!-- TIMER -->
+                <div class="flex flex-col items-center mb-6">
+                    <div class="text-5xl font-black tracking-tight text-slate-100 font-mono mb-2" id="timerDisplay">
+                        03:00
+                    </div>
+                    <div class="w-64 bg-slate-700 h-2 rounded-full overflow-hidden">
+                        <div id="timerProgress" class="bg-emerald-500 h-full w-full transition-all duration-1000"></div>
+                    </div>
+                </div>
+
+                <!-- KONTROLKI TRENINGU -->
+                <div class="flex items-center gap-3">
+                    <button id="prevBtn" onclick="prevStep()" class="p-3 bg-slate-700/50 hover:bg-slate-700 rounded-xl transition text-slate-300">
+                        <i data-lucide="skip-back" class="w-5 h-5"></i>
+                    </button>
+                    <button id="playPauseBtn" onclick="togglePlayPause()" class="p-4 bg-emerald-500 hover:bg-emerald-400 text-slate-950 rounded-full shadow-lg shadow-emerald-500/10 transition">
+                        <i id="playPauseIcon" data-lucide="pause" class="w-6 h-6 fill-current"></i>
+                    </button>
+                    <button id="nextBtn" onclick="nextStep()" class="p-3 bg-slate-700/50 hover:bg-slate-700 rounded-xl transition text-slate-300">
+                        <i data-lucide="skip-forward" class="w-5 h-5"></i>
+                    </button>
+                    <button onclick="exitWorkout()" class="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-xl transition ml-4" title="Przerwij">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-slate-800 bg-slate-950/40 py-6 text-center text-xs text-slate-500">
+        <div class="max-w-5xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-3">
+            <p>© 2026 OptiFit. Twój wzrok w erze cyfrowej. Dbaj o oczy każdego dnia.</p>
+            <p>Zalecany trening: 1 raz dziennie.</p>
+        </div>
+    </footer>
+
+    <!-- MODAL: REGULA 20-20-20 -->
+    <div id="rulesModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 space-y-4">
+            <div class="flex justify-between items-start">
+                <h4 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <i data-lucide="info" class="text-emerald-400 w-5 h-5"></i>
+                    Złota Reguła 20-20-20
+                </h4>
+                <button id="closeModalBtn" class="text-slate-400 hover:text-slate-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <p class="text-slate-300 text-sm leading-relaxed">
+                Jest to rekomendacja Amerykańskiego Towarzystwa Optometrycznego, stworzona w celu zapobiegania syndromowi zmęczenia oczu (CVS):
+            </p>
+            <div class="bg-slate-900/60 p-4 rounded-xl space-y-3 border border-slate-700/50 text-sm">
+                <div class="flex gap-3">
+                    <span class="text-emerald-400 font-bold">20 minut:</span>
+                    <span class="text-slate-300">Co tyle czasu pracy przy ekranie zrób przerwę.</span>
+                </div>
+                <div class="flex gap-3">
+                    <span class="text-emerald-400 font-bold">20 sekund:</span>
+                    <span class="text-slate-300">Tyle powinna trwać minimalna przerwa.</span>
+                </div>
+                <div class="flex gap-3">
+                    <span class="text-emerald-400 font-bold">20 stóp (6 m):</span>
+                    <span class="text-slate-300">Patrz na obiekt oddalony o minimum 6 metrów (lub za okno), by rozluźnić akomodację.</span>
+                </div>
+            </div>
+            <p class="text-slate-400 text-xs">
+                Ustaw sobie budzik w telefonie co godzinę, aby wykonać trzy takie krótkie mikro-przerwy. Poczujesz ogromną ulgę pod koniec dnia!
+            </p>
+            <button id="closeModalBtnOk" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl transition text-sm">
+                Rozumiem
+            </button>
+        </div>
+    </div>
+
+    <!-- AUDIO GENERATOR (WEB AUDIO API) -->
+    <script>
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        
+        function playTone(freq, duration) {
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch (e) {
+                // AudioContext zablokowany
+            }
+        }
+        
+        function playBeepHigh() {
+            playTone(880, 0.15);
+        }
+        function playBeepLow() {
+            playTone(440, 0.2);
+        }
+    </script>
+
+    <!-- WORKOUT LOGIC -->
+    <script>
+        const EXERCISES = [
+            {
+                title: "Płynny Autofokus",
+                desc: "Główne ćwiczenie akomodacji. Przenoś wzrok z bliskiego kciuka (30 cm) na oddalony obiekt za oknem (min. 5 m). Czekaj, aż obraz złapie pełną ostrość.",
+                duration: 180, // 3 minuty
+                setup: () => startAutofokusAnimation()
+            },
+            {
+                title: "Skakanie Wzrokiem",
+                desc: "Skup wzrok po kolei: 1) Telefon w dłoni, 2) Przedmiot na końcu pokoju, 3) Obiekt daleko za oknem. Po sekcji idź w odwrotnej kolejności.",
+                duration: 120, // 2 minuty
+                setup: () => startJumpAnimation()
+            },
+            {
+                title: "Ósemki w lewo",
+                desc: "Wódź wzrokiem za płynnie poruszającą się zieloną kropką przeciwnie do wskazówek zegara. Staraj się nie poruszać głową – ruszaj wyłącznie gałkami ocznymi.",
+                duration: 60, // 1 minuta
+                setup: () => {}
+            },
+            {
+                title: "Ósemki w prawo",
+                desc: "Teraz zmiana kierunku. Śledź ruch zielonej kropki zgodnie ze wskazówkami zegara. To ćwiczenie uelastycznia mięśnie zewnątrzgałkowe w drugim kierunku.",
+                duration: 60, // 1 minuta
+                setup: () => {}
+            },
+            {
+                title: "Focus Bez Okularów",
+                desc: "ZDEJMIJ OKULARY lub soczewki (jeśli to możliwe). Trzymaj telefon w dłoni. Przez 2 minuty powoli przybliżaj go do oczu i oddalaj na długość rąk. Cały czas staraj się utrzymać ostrość na wybranym elemencie ekranu.",
+                duration: 120, // 2 minuty
+                setup: () => startFocusNoGlassesAnimation()
+            },
+            {
+                title: "Szybki Palming",
+                desc: "Zasłoń oczy rozgrzanymi dłońmi (nie uciskaj ich). Oddychaj spokojnie i patrz w całkowitą ciemność. Pozwól rozgrzanym dłoniom zrelaksować mięsień rzęskowy po intensywnym treningu.",
+                duration: 60, // 1 minuta
+                setup: () => {}
+            }
+        ];
+
+        let currentStepIndex = 0;
+        let timer = null;
+        let timeLeft = 0;
+        let isPaused = false;
+        let isSingleExerciseMode = false;
+        
+        let autofocusInterval = null;
+        let jumpInterval = null;
+        let focusInterval = null;
+
+        function startFullWorkout() {
+            isSingleExerciseMode = false;
+            currentStepIndex = 0;
+            loadStep(currentStepIndex);
+            switchToView('workoutView');
+        }
+
+        function startSingleExercise(index) {
+            isSingleExerciseMode = true;
+            currentStepIndex = index;
+            loadStep(currentStepIndex);
+            switchToView('workoutView');
+        }
+
+        function switchToView(viewId) {
+            document.getElementById('dashboardView').classList.add('hidden');
+            document.getElementById('workoutView').classList.add('hidden');
+            document.getElementById(viewId).classList.remove('hidden');
+        }
+
+        function loadStep(index) {
+            // Czyszczenie poprzednich intervali i animacji
+            clearInterval(autofocusInterval);
+            clearInterval(jumpInterval);
+            clearInterval(focusInterval);
+            if (timer) clearInterval(timer);
+
+            const step = EXERCISES[index];
+            document.getElementById('workoutStepIndicator').innerText = `Krok ${index + 1} z 6`;
+            document.getElementById('workoutTitle').innerText = step.title;
+            document.getElementById('workoutDesc').innerText = step.desc;
+            
+            // Konfiguracja wizualizacji
+            document.querySelectorAll('.visual-container').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`visual-${index}`).classList.remove('hidden');
+
+            // Uruchomienie specyficznej metody setup
+            step.setup();
+
+            // Konfiguracja timera
+            timeLeft = step.duration;
+            updateTimerDisplay();
+            isPaused = false;
+            updatePlayPauseUI();
+            
+            startTimer();
+
+            // Nawigacja
+            document.getElementById('prevBtn').disabled = (index === 0) || isSingleExerciseMode;
+            document.getElementById('nextBtn').disabled = (index === EXERCISES.length - 1) || isSingleExerciseMode;
+            
+            if (isSingleExerciseMode) {
+                document.getElementById('prevBtn').classList.add('opacity-30');
+                document.getElementById('nextBtn').classList.add('opacity-30');
+            } else {
+                document.getElementById('prevBtn').classList.remove('opacity-30');
+                document.getElementById('nextBtn').classList.remove('opacity-30');
+            }
+        }
+
+        function startTimer() {
+            if (timer) clearInterval(timer);
+            timer = setInterval(() => {
+                if (!isPaused) {
+                    timeLeft--;
+                    updateTimerDisplay();
+                    if (timeLeft <= 0) {
+                        clearInterval(timer);
+                        playBeepHigh();
+                        setTimeout(() => playBeepHigh(), 300);
+                        
+                        if (isSingleExerciseMode) {
+                            alertSingleCompleted();
+                        } else {
+                            nextStep();
+                        }
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            document.getElementById('timerDisplay').innerText = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            const step = EXERCISES[currentStepIndex];
+            const percent = (timeLeft / step.duration) * 100;
+            document.getElementById('timerProgress').style.width = `${percent}%`;
+        }
+
+        function togglePlayPause() {
+            isPaused = !isPaused;
+            updatePlayPauseUI();
+        }
+
+        function updatePlayPauseUI() {
+            const icon = document.getElementById('playPauseIcon');
+            if (isPaused) {
+                icon.setAttribute('data-lucide', 'play');
+            } else {
+                icon.setAttribute('data-lucide', 'pause');
+            }
+            lucide.createIcons();
+        }
+
+        function nextStep() {
+            if (currentStepIndex < EXERCISES.length - 1) {
+                currentStepIndex++;
+                loadStep(currentStepIndex);
+            } else {
+                clearInterval(timer);
+                alertWorkoutCompleted();
+            }
+        }
+
+        function prevStep() {
+            if (currentStepIndex > 0) {
+                currentStepIndex--;
+                loadStep(currentStepIndex);
+            }
+        }
+
+        function exitWorkout() {
+            clearInterval(timer);
+            clearInterval(autofocusInterval);
+            clearInterval(jumpInterval);
+            clearInterval(focusInterval);
+            switchToView('dashboardView');
+        }
+
+        function alertWorkoutCompleted() {
+            const mainContent = document.getElementById('workoutView');
+            mainContent.innerHTML = `
+                <div class="bg-slate-800 border border-emerald-500/30 rounded-2xl p-8 text-center max-w-md mx-auto space-y-6">
+                    <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
+                        <i data-lucide="check-circle" class="w-10 h-10"></i>
+                    </div>
+                    <h3 class="text-2xl font-black">Trening Ukończony!</h3>
+                    <p class="text-slate-300 text-sm leading-relaxed">
+                        Wspaniale! Twój ulepszony 10-minutowy trening dobiegł końca. Mięśnie oka zostały prawidłowo rozruszane i zrelaksowane. Wykonuj te ćwiczenia codziennie.
+                    </p>
+                    <button onclick="location.reload()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3 rounded-xl transition">
+                        Wróć do Panelu
+                    </button>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function alertSingleCompleted() {
+            const mainContent = document.getElementById('workoutView');
+            mainContent.innerHTML = `
+                <div class="bg-slate-800 border border-emerald-500/30 rounded-2xl p-8 text-center max-w-md mx-auto space-y-6">
+                    <div class="w-16 h-16 bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center mx-auto">
+                        <i data-lucide="check-circle" class="w-10 h-10"></i>
+                    </div>
+                    <h3 class="text-2xl font-black">Ćwiczenie Zakończone!</h3>
+                    <p class="text-slate-300 text-sm leading-relaxed">
+                        Wybrany etap treningu został pomyślnie ukończony.
+                    </p>
+                    <button onclick="location.reload()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold py-3 rounded-xl transition">
+                        Wróć do Panelu
+                    </button>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // --- SUB-ANIMACJE INTERAKTYWNE ---
+        
+        // 1. Animacja dla Autofokusa
+        function startAutofokusAnimation() {
+            let step = 0; 
+            const thumb = document.getElementById('autofocus-thumb');
+            const distant = document.getElementById('autofocus-distant');
+            const laser = document.getElementById('autofocus-laser');
+            const instruction = document.getElementById('autofocus-instruction');
+
+            autofocusInterval = setInterval(() => {
+                if (isPaused) return;
+
+                step = step === 0 ? 1 : 0;
+                playBeepLow();
+
+                if (step === 0) {
+                    thumb.style.transform = 'scale(1.15)';
+                    thumb.style.opacity = '1';
+                    distant.style.transform = 'scale(1)';
+                    distant.style.opacity = '0.4';
+                    laser.style.left = '0%';
+                    instruction.innerText = "SKUP WZROK BLISKO (NA KCIUKU)";
+                } else {
+                    thumb.style.transform = 'scale(1)';
+                    thumb.style.opacity = '0.4';
+                    distant.style.transform = 'scale(1.15)';
+                    distant.style.opacity = '1';
+                    laser.style.left = '85%';
+                    instruction.innerText = "SPOJRZ W DAL (ZŁAP OSTROŚĆ)";
+                }
+            }, 4000);
+        }
+
+        // 2. Animacja dla skakania wzrokiem
+        function startJumpAnimation() {
+            let activePoint = 1; 
+            let direction = 1; 
+            
+            const instruction = document.getElementById('jump-instruction');
+            const instructionsText = {
+                1: "PATRZ NA TELEFON (BLISKO)",
+                2: "PATRZ NA ŚCIANĘ (ŚREDNIO)",
+                3: "PATRZ ZA OKNO (DALEKO)"
+            };
+
+            function updatePointsUI() {
+                for (let i = 1; i <= 3; i++) {
+                    const el = document.getElementById(`jump-${i}`);
+                    if (i === activePoint) {
+                        el.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'scale-110');
+                        el.classList.remove('opacity-40');
+                    } else {
+                        el.classList.remove('bg-emerald-500/10', 'border-emerald-500/30', 'scale-110');
+                        el.classList.add('opacity-40');
+                    }
+                }
+                instruction.innerText = instructionsText[activePoint];
+            }
+
+            updatePointsUI();
+
+            jumpInterval = setInterval(() => {
+                if (isPaused) return;
+
+                playBeepLow();
+                activePoint += direction;
+
+                if (activePoint === 3) {
+                    direction = -1;
+                } else if (activePoint === 1) {
+                    direction = 1;
+                }
+
+                updatePointsUI();
+            }, 3000);
+        }
+
+        // 5. Animacja dla Focus Bez Okularów
+        function startFocusNoGlassesAnimation() {
+            let isCloser = true;
+            const instruction = document.getElementById('focus-instruction');
+            
+            focusInterval = setInterval(() => {
+                if (isPaused) return;
+                
+                playBeepLow();
+                isCloser = !isCloser;
+                
+                if (isCloser) {
+                    instruction.innerText = "POWOLI PRZYBLIŻAJ TELEFON";
+                } else {
+                    instruction.innerText = "POWOLI ODDALAJ TELEFON";
+                }
+            }, 3000); // Współgra z czasem animacji CSS (6s pełny cykl)
+        }
+    </script>
+
+    <!-- MODAL LOGIC -->
+    <script>
+        const rulesModal = document.getElementById('rulesModal');
+        const rulesBtn = document.getElementById('rulesBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const closeModalBtnOk = document.getElementById('closeModalBtnOk');
+
+        function openModal() {
+            rulesModal.classList.remove('hidden');
+        }
+        function closeModal() {
+            rulesModal.classList.add('hidden');
+        }
+
+        rulesBtn.addEventListener('click', openModal);
+        closeModalBtn.addEventListener('click', closeModal);
+        closeModalBtnOk.addEventListener('click', closeModal);
+    </script>
+
+    <script>
+        lucide.createIcons();
+    </script>
+    
+    <!-- Rejestracja Service Workera dla wsparcia offline w Google Play -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('OptiFit Service Worker zarejestrowany pomyślnie!', reg))
+                    .catch(err => console.error('Błąd rejestracji Service Workera:', err));
+            });
+        }
+    </script>
+</body>
+</html>

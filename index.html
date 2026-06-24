@@ -772,7 +772,7 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('/optifit/sw.js', { scope: '/optifit/' })
+                navigator.serviceWorker.register('/OptiFit/sw.js', { scope: '/OptiFit/' })
                     .then(reg => console.log('OptiFit Service Worker zarejestrowany pomyślnie!', reg))
                     .catch(err => console.error('Błąd rejestracji Service Workera:', err));
             });

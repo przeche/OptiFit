@@ -1,4 +1,4 @@
-const CACHE_NAME = 'optifit-v10'; // Zwiększamy wersję, aby wymusić natychmiastowe czyszczenie starego cache w telefonie
+const CACHE_NAME = 'optifit-v4'; // Zwiększamy wersję, aby wymusić natychmiastowe czyszczenie starego cache
 const ASSETS = [
   './index.html',
   './manifest.json',
